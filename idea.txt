@@ -1,0 +1,3 @@
+blackjack vs computer. computer as house and player as player. 
+person closest to 21 not over but under either 21 or lower wins. but sum must be higher then house. house stands on 17 and above always
+buttons for hit and stand. stand causing your cards to be locked and hit causing a random card number to be given to you. maybe even add a betting function to the whole system 
