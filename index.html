@@ -3,29 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blackjack Game</title>
+    <title>Blackjack</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="game-container">
         <h1>Blackjack</h1>
+        
+        <div id="wallets">
+            <p>Player Wallet: $<span id="player-wallet">1000</span></p>
+            <p>House Wallet: $<span id="house-wallet">10000</span></p>
+        </div>
+
+        <div id="bet-section">
+            <label for="bet-input">Bet Amount: $</label>
+            <input type="number" id="bet-input" min="5" step="5" value="10">
+        </div>
+
+        <div id="chips-container"></div>
+
         <div id="message">Click "New Game" to start!</div>
+
         <div class="hands">
             <div id="dealer-hand">
-                <h2>Dealer's Hand: <span id="dealer-score">0</span></h2>
+                <h3>Dealer's Hand: <span id="dealer-score">0</span></h3>
                 <div id="dealer-cards"></div>
             </div>
+
             <div id="player-hand">
-                <h2>Player's Hand: <span id="player-score">0</span></h2>
+                <h3>Player's Hand: <span id="player-score">0</span></h3>
                 <div id="player-cards"></div>
             </div>
         </div>
+
         <div class="controls">
             <button id="new-game">New Game</button>
             <button id="hit" disabled>Hit</button>
             <button id="stand" disabled>Stand</button>
+            <button id="double" disabled>Double Down</button>
         </div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,3 +1,6 @@
 blackjack vs computer. computer as house and player as player. 
 person closest to 21 not over but under either 21 or lower wins. but sum must be higher then house. house stands on 17 and above always
 buttons for hit and stand. stand causing your cards to be locked and hit causing a random card number to be given to you. maybe even add a betting function to the whole system 
+
+
+Build a betting system. player starts with 1000 dollars house starts with 10000 dollars. quest to break the houses bank and collect it all
