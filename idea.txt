@@ -4,3 +4,5 @@ buttons for hit and stand. stand causing your cards to be locked and hit causing
 
 
 Build a betting system. player starts with 1000 dollars house starts with 10000 dollars. quest to break the houses bank and collect it all
+
+updating imagery so instead of simple circles ill use actual imagery of poker chips to simulate the currency properties
