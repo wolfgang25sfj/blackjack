@@ -78,14 +78,17 @@ function updateDisplay() {
 // display chips
 function displayChips(amount) {
     chipsEl.innerHTML = '';
-    const chipValue = 5;
-    const numChips = Math.floor(amount / chipValue);
-    for (let i = 0; i < numChips; i++) {
+    if (amount > 0) {
         const chip = document.createElement('img');
         chip.classList.add('chip');
         chip.src = 'chip.png'; // Replace with actual path to poker chip image
         chip.alt = 'Poker Chip';
         chipsEl.appendChild(chip);
+
+        const betLabel = document.createElement('div');
+        betLabel.classList.add('bet-label');
+        betLabel.textContent = `$${amount}`;
+        chipsEl.appendChild(betLabel);
     }
 }
 
