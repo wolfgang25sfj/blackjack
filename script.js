@@ -81,8 +81,10 @@ function displayChips(amount) {
     const chipValue = 5;
     const numChips = Math.floor(amount / chipValue);
     for (let i = 0; i < numChips; i++) {
-        const chip = document.createElement('div');
+        const chip = document.createElement('img');
         chip.classList.add('chip');
+        chip.src = 'chip.png'; // Replace with actual path to poker chip image
+        chip.alt = 'Poker Chip';
         chipsEl.appendChild(chip);
     }
 }

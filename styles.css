@@ -46,13 +46,9 @@ h1 {
 }
 
 .chip {
-    width: 20px;
-    height: 20px;
-    background: radial-gradient(circle, #ffd700, #ff8c00);
-    border: 1px solid #b8860b;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
     margin: 0 2px;
-    display: inline-block;
 }
 
 #message {
