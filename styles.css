@@ -2,7 +2,7 @@ body {
     font-family: Arial, sans-serif;
     display: flex;
     justify-content: center;
-    background-color: #073d19;
+    background-color: #2e7d32;
     margin: 0;
     padding: 20px;
 }
@@ -69,13 +69,26 @@ h1 {
     gap: 20px;
 }
 
-#dealer-hand, #player-hand {
+#dealer-hand, #player-hand1 {
     background-color: #f5f5f5;
     padding: 10px;
     border-radius: 5px;
 }
 
-#dealer-cards, #player-cards {
+.player-hands {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#player-hand2 {
+    display: none;
+    background-color: #f5f5f5;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#dealer-cards, #player-cards1, #player-cards2 {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;

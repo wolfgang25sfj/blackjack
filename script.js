@@ -1,18 +1,25 @@
 const suits = ['♠', '♥', '♦', '♣'];
 const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 let deck = [];
-let playerHand = [];
+let playerHands = [];
 let dealerHand = [];
 let gameActive = false;
 let playerWallet = 1000;
 let houseWallet = 10000;
+let handBets = [];
+let numHands = 1;
+let currentHandIndex = 0;
+let splitActive = false;
 let currentBet = 0;
 
 const messageEl = document.getElementById('message');
 const dealerCardsEl = document.getElementById('dealer-cards');
-const playerCardsEl = document.getElementById('player-cards');
 const dealerScoreEl = document.getElementById('dealer-score');
-const playerScoreEl = document.getElementById('player-score');
+const playerHand1TitleEl = document.getElementById('player-hand1-title');
+const playerCardsEl1 = document.getElementById('player-cards1');
+const playerHand2El = document.getElementById('player-hand2');
+const playerHand2TitleEl = document.getElementById('player-hand2-title');
+const playerCardsEl2 = document.getElementById('player-cards2');
 const playerWalletEl = document.getElementById('player-wallet');
 const houseWalletEl = document.getElementById('house-wallet');
 const betInputEl = document.getElementById('bet-input');
@@ -21,6 +28,7 @@ const newGameBtn = document.getElementById('new-game');
 const hitBtn = document.getElementById('hit');
 const standBtn = document.getElementById('stand');
 const doubleBtn = document.getElementById('double');
+const splitBtn = document.getElementById('split');
 
 // deck creation
 function createDeck() {
@@ -66,13 +74,27 @@ function displayCard(card, container, hidden = false) {
 // update display if pull
 function updateDisplay() {
     dealerCardsEl.innerHTML = '';
-    playerCardsEl.innerHTML = '';
     dealerHand.forEach((card, index) => {
         displayCard(card, dealerCardsEl, index === 0 && gameActive);
     });
-    playerHand.forEach(card => displayCard(card, playerCardsEl));
     dealerScoreEl.textContent = gameActive ? '?' : calculateScore(dealerHand);
-    playerScoreEl.textContent = calculateScore(playerHand);
+
+    // player hand 1
+    playerCardsEl1.innerHTML = '';
+    playerHands[0].forEach(card => displayCard(card, playerCardsEl1));
+    const score1 = calculateScore(playerHands[0]);
+
+    if (splitActive) {
+        playerHand1TitleEl.innerHTML = `Player's Hand 1: <span id="player-score1">${score1}</span>`;
+        playerHand2El.style.display = 'block';
+        playerCardsEl2.innerHTML = '';
+        playerHands[1].forEach(card => displayCard(card, playerCardsEl2));
+        const score2 = calculateScore(playerHands[1]);
+        playerHand2TitleEl.innerHTML = `Player's Hand 2: <span id="player-score2">${score2}</span>`;
+    } else {
+        playerHand1TitleEl.innerHTML = `Player's Hand: <span id="player-score1">${score1}</span>`;
+        playerHand2El.style.display = 'none';
+    }
 }
 
 // display chips
@@ -98,36 +120,117 @@ function updateWallets() {
     houseWalletEl.textContent = houseWallet;
 }
 
-// end of game with update for winner
-function endGame(message, payoutMultiplier) {
+// complete player turn and evaluate
+function completePlayerTurn() {
     gameActive = false;
-    messageEl.textContent = message;
-    hitBtn.disabled = true;
-    standBtn.disabled = true;
-    doubleBtn.disabled = true;
-    newGameBtn.disabled = false;
-
-    // Handle payout
-    playerWallet += payoutMultiplier * currentBet;
-    if (payoutMultiplier === 0) {
-        // Lose: house gains the bet
-        houseWallet += currentBet;
-    } else if (payoutMultiplier > 1) {
-        // Win: house loses the profit
-        houseWallet -= (payoutMultiplier - 1) * currentBet;
+    let anyBlackjack = false;
+    for (let i = 0; i < numHands; i++) {
+        if (!splitActive && i === 0 && playerHands[i].length === 2 && calculateScore(playerHands[i]) === 21) {
+            anyBlackjack = true;
+            break;
+        }
     }
-    // Push: no change to house
 
+    let dealerScore = calculateScore(dealerHand);
+    if (!anyBlackjack) {
+        while (dealerScore < 17) {
+            dealerHand.push(deck.pop());
+            dealerScore = calculateScore(dealerHand);
+        }
+    }
+    updateDisplay();
+
+    let totalMessage = '';
+    for (let i = 0; i < numHands; i++) {
+        const pScore = calculateScore(playerHands[i]);
+        let handMsg = '';
+        let multiplier = 0;
+        const isBlackjack = (!splitActive && i === 0 && playerHands[i].length === 2 && pScore === 21);
+        const isDealerBlackjack = (dealerHand.length === 2 && dealerScore === 21);
+
+        if (pScore > 21) {
+            handMsg = 'Bust! You lose.';
+            multiplier = 0;
+        } else if (isBlackjack) {
+            if (isDealerBlackjack) {
+                handMsg = 'Both Blackjack! Push (tie).';
+                multiplier = 1;
+            } else {
+                handMsg = 'Blackjack! You win!';
+                multiplier = 2.5;
+            }
+        } else {
+            if (dealerScore > 21) {
+                handMsg = 'Dealer busts! You win!';
+                multiplier = 2;
+            } else if (dealerScore > pScore) {
+                handMsg = 'Dealer wins.';
+                multiplier = 0;
+            } else if (pScore > dealerScore) {
+                handMsg = 'You win!';
+                multiplier = 2;
+            } else {
+                handMsg = 'Push (tie).';
+                multiplier = 1;
+            }
+        }
+        totalMessage += `Hand ${i + 1}: ${handMsg} `;
+
+        const thisBet = handBets[i];
+        playerWallet += multiplier * thisBet;
+        if (multiplier === 0) {
+            houseWallet += thisBet;
+        } else if (multiplier > 1) {
+            houseWallet -= (multiplier - 1) * thisBet;
+        }
+    }
+
+    messageEl.textContent = totalMessage;
     updateWallets();
     updateDisplay();
 
     // Check bankruptcy
+    hitBtn.disabled = true;
+    standBtn.disabled = true;
+    doubleBtn.disabled = true;
+    splitBtn.disabled = true;
+    newGameBtn.disabled = false;
     if (playerWallet <= 0) {
         messageEl.textContent += ' You are bankrupt! Game Over.';
         newGameBtn.disabled = true;
     } else if (houseWallet <= 0) {
         messageEl.textContent = 'You bankrupted the house! Congratulations!';
         newGameBtn.disabled = true;
+    }
+}
+
+// next hand
+function nextHand() {
+    currentHandIndex++;
+    if (currentHandIndex < numHands) {
+        messageEl.textContent = `Now play Hand ${currentHandIndex + 1}. Hit or Stand?`;
+        hitBtn.disabled = false;
+        standBtn.disabled = false;
+        doubleBtn.disabled = !(playerHands[currentHandIndex].length === 2 && playerWallet >= handBets[currentHandIndex]);
+        splitBtn.disabled = true;
+        updateDisplay();
+    } else {
+        completePlayerTurn();
+    }
+}
+
+// finish current hand
+function finishCurrentHand(isBust = false) {
+    if (isBust) {
+        messageEl.textContent = `Bust on Hand ${currentHandIndex + 1}!`;
+        hitBtn.disabled = true;
+    } else {
+        messageEl.textContent = `Stand on Hand ${currentHandIndex + 1}.`;
+    }
+    if (splitActive && currentHandIndex < numHands - 1) {
+        nextHand();
+    } else {
+        completePlayerTurn();
     }
 }
 
@@ -139,83 +242,104 @@ function startGame() {
         return;
     }
     currentBet = bet;
-    playerWallet -= bet;
-    displayChips(currentBet);
-    updateWallets();
-
     createDeck();
-    playerHand = [deck.pop(), deck.pop()];
+    playerHands = [[deck.pop(), deck.pop()]];
     dealerHand = [deck.pop(), deck.pop()];
+    playerWallet -= bet;
+    handBets = [bet];
+    numHands = 1;
+    currentHandIndex = 0;
+    splitActive = false;
     gameActive = true;
     hitBtn.disabled = false;
     standBtn.disabled = false;
-    doubleBtn.disabled = false;
+    doubleBtn.disabled = !(playerWallet >= bet);
+    splitBtn.disabled = true;
     newGameBtn.disabled = true;
     messageEl.textContent = 'Hit or Stand?';
+    displayChips(bet);
+    updateWallets();
     updateDisplay();
 
-    const playerScore = calculateScore(playerHand);
-    const dealerScore = calculateScore(dealerHand);
+    const playerScore = calculateScore(playerHands[0]);
+    if (playerScore === 21 && playerHands[0].length === 2) {
+        completePlayerTurn();
+        return;
+    }
 
-    // Check for Blackjack
-    if (playerScore === 21 && playerHand.length === 2) {
-        if (dealerScore === 21 && dealerHand.length === 2) {
-            endGame('Both Blackjack! Push (tie).', 1);
-        } else {
-            endGame('Blackjack! You win!', 2.5);
-        }
-        return;
+    const card1Val = getCardValue(playerHands[0][0]);
+    const card2Val = getCardValue(playerHands[0][1]);
+    if (card1Val === card2Val) {
+        splitBtn.disabled = !(playerWallet >= bet);
     }
+
+    const dealerScore = calculateScore(dealerHand);
     if (dealerScore === 21 && dealerHand.length === 2) {
-        endGame('Dealer Blackjack. You lose.', 0);
+        completePlayerTurn();
         return;
     }
+}
+
+// split function
+function split() {
+    if (numHands > 1 || playerHands[0].length !== 2 || getCardValue(playerHands[0][0]) !== getCardValue(playerHands[0][1]) || playerWallet < handBets[0]) {
+        return;
+    }
+    const secondCard = playerHands[0].pop();
+    playerHands[0].push(deck.pop());
+    playerHands.push([secondCard, deck.pop()]);
+    handBets.push(handBets[0]);
+    playerWallet -= handBets[0];
+    numHands = 2;
+    splitActive = true;
+    currentHandIndex = 0;
+    splitBtn.disabled = true;
+    doubleBtn.disabled = !(playerHands[0].length === 2 && playerWallet >= handBets[0]);
+    messageEl.textContent = 'Split! Hit or Stand for Hand 1?';
+    displayChips(handBets.reduce((a, b) => a + b, 0));
+    updateWallets();
+    updateDisplay();
 }
 
 // hit function
 function hit() {
     if (!gameActive) return;
-    playerHand.push(deck.pop());
+    const currentHand = playerHands[currentHandIndex];
+    currentHand.push(deck.pop());
     updateDisplay();
-    doubleBtn.disabled = true; // Can't double after hit
-    const playerScore = calculateScore(playerHand);
+    doubleBtn.disabled = true;
+    const playerScore = calculateScore(currentHand);
     if (playerScore > 21) {
-        endGame('Bust! You lose.', 0);
+        finishCurrentHand(true);
     }
 }
 
 // double down
 function doubleDown() {
-    if (!gameActive || playerWallet < currentBet || playerHand.length !== 2) return;
-    playerWallet -= currentBet;
-    currentBet *= 2;
-    displayChips(currentBet);
+    if (!gameActive || playerHands[currentHandIndex].length !== 2 || playerWallet < handBets[currentHandIndex]) return;
+    const handIndex = currentHandIndex;
+    const betForHand = handBets[handIndex];
+    playerWallet -= betForHand;
+    handBets[handIndex] *= 2;
+    displayChips(handBets.reduce((a, b) => a + b, 0));
     updateWallets();
-    hit();
-    if (gameActive) {
-        stand();
+    playerHands[handIndex].push(deck.pop());
+    updateDisplay();
+    const scoreAfter = calculateScore(playerHands[handIndex]);
+    if (scoreAfter > 21) {
+        messageEl.textContent = `Double down bust on Hand ${currentHandIndex + 1}!`;
+        finishCurrentHand(true);
+    } else {
+        messageEl.textContent = `Doubled down on Hand ${currentHandIndex + 1}. Stand.`;
+        finishCurrentHand(false);
     }
+    doubleBtn.disabled = true;
 }
 
-// stand function and display functions for win loss and push (tie)
+// stand function
 function stand() {
     if (!gameActive) return;
-    gameActive = false;
-    while (calculateScore(dealerHand) < 17) {
-        dealerHand.push(deck.pop());
-    }
-    updateDisplay();
-    const playerScore = calculateScore(playerHand);
-    const dealerScore = calculateScore(dealerHand);
-    if (dealerScore > 21) {
-        endGame('Dealer busts! You win!', 2);
-    } else if (dealerScore > playerScore) {
-        endGame('Dealer wins.', 0);
-    } else if (playerScore > dealerScore) {
-        endGame('You win!', 2);
-    } else {
-        endGame('Push (tie).', 1);
-    }
+    finishCurrentHand(false);
 }
 
 // button events
@@ -223,6 +347,7 @@ newGameBtn.addEventListener('click', startGame);
 hitBtn.addEventListener('click', hit);
 standBtn.addEventListener('click', stand);
 doubleBtn.addEventListener('click', doubleDown);
+splitBtn.addEventListener('click', split);
 
 // Initialize wallets
 updateWallets();
